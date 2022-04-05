@@ -1,61 +1,70 @@
 <template>
   <div class="notes">
-    <h1>The Notes Page!</h1>
-    <div class="heading">
-      <div class="circle">1</div>
-      <h2>Create a note</h2>
-    </div>
-    <div class="add">
-      <div class="form">
-        <input v-model="title" placeholder="Title" />
-        <p></p>
-        <textarea v-model="note" placeholder="Description" />
-        <p></p>
+    <div class="edit" style="width: 25em" v-if="findNote">
+      <h1>Edit Note</h1>
+      <div class="row">
+        <input v-model="findNote.title" placeholder="Note Title" />
       </div>
-      <div class="upload" v-if="addNote">
-        <h2>{{ addNote.title }}</h2>
-        <p>{{ addNote.note }}</p>
+      <div class="row">
+        <input v-model="findNote.speaker" placeholder="Speaker" />
+      </div>
+      <div class="row">
+        <input v-model="findNote.session" placeholder="Session" />
+      </div>
+      <div class="row">
+        <textarea v-model="findNote.note" placeholder="Note" />
+      </div>
+      <div class="note-actions">
+        <button @click="selectNote(null)">Cancel</button>
+        <button @click="editNote(findNote)">Save changes</button>
       </div>
     </div>
-    <div class="edit">
-      <div class="form">
-        <input v-model="findTitle" placeholder="Search" />
-        <div class="suggestions" v-if="suggestions.length > 0">
-          <div
-            class="suggestion"
-            v-for="s in suggestions"
-            :key="s.id"
-            @click="selectNote(s)"
-          >
-            {{ s.title }}
-          </div>
+    <h1>Notes</h1>
+    <hr />
+    <section class="list">
+      <div v-for="note in notes" :key="note.id">
+        <h2>{{ note.title }}</h2>
+        <p>
+          <em>{{ note.speaker }} - {{ note.session }}</em>
+        </p>
+        <p>{{ note.note }}</p>
+        <div class="note-actions">
+          <button @click="selectNote(note)">Edit</button>
+          <button @click="deleteNote(note)">Delete</button>
         </div>
+        <hr />
       </div>
-      <div class="upload" v-if="findNote">
-        <input v-model="findNote.title" />
-        <p></p>
-        <textarea v-model="findNote.note" />
-        <p></p>
-        <img :src="findNote.path" />
+    </section>
+    <h1>Add a New Note</h1>
+    <div class="add">
+      <div style="width: 25em" class="form">
+        <div class="row">
+          <input v-model="title" placeholder="Note Title" />
+        </div>
+        <div class="row">
+          <input v-model="speaker" placeholder="Speaker" />
+        </div>
+        <div class="row">
+          <input v-model="session" placeholder="Session" />
+        </div>
+        <div class="row">
+          <textarea v-model="note" placeholder="Note" />
+        </div>
+        <button @click="upload" style="margin-top: 1em">Save</button>
       </div>
-      
     </div>
   </div>
 </template>
 
 <script>
-/*
-<div class="actions" v-if="findNote">
-    <button @click="deleteNote(findNote)">Delete</button>
-    <button @click="editNote(findNote)">Edit</button>
-</div>
-*/
 import axios from "axios";
 export default {
   name: "NotesView",
   data() {
     return {
       title: "",
+      speaker: "",
+      session: "",
       note: "",
       file: null,
       addNote: null,
@@ -75,9 +84,12 @@ export default {
       try {
         let r2 = await axios.post("/api/notes", {
           title: this.title,
+          speaker: this.speaker,
+          session: this.session,
           note: this.note,
         });
         this.addNote = r2.data;
+        window.location.reload();
       } catch (error) {
         console.log(error);
       }
@@ -92,8 +104,8 @@ export default {
       }
     },
     selectNote(note) {
-      this.findTitle = "";
       this.findNote = note;
+      this.getNotes();
     },
     async deleteNote(note) {
       try {
@@ -109,6 +121,8 @@ export default {
       try {
         await axios.put("/api/notes/" + note._id, {
           title: this.findNote.title,
+          speaker: this.findNote.speaker,
+          session: this.findNote.session,
           note: this.findNote.note,
         });
         this.findNote = null;
@@ -123,9 +137,25 @@ export default {
 </script>
 
 <style scoped>
-.image h2 {
+.note-actions {
+  display: flex;
+  padding-top: 1em;
+}
+
+.note-actions button {
+  margin-right: 0.7em;
+}
+
+button {
+  color: maroon;
+  border: maroon 1px solid;
+  padding: 0.2em 1em;
+  border-radius: 1em;
+}
+
+h2 {
   font-style: italic;
-  font-size: 1em;
+  font-size: 1.2em;
 }
 .heading {
   display: flex;
@@ -136,8 +166,7 @@ export default {
   margin-top: 8px;
   margin-left: 10px;
 }
-.add,
-.edit {
+.add {
   display: flex;
 }
 .circle {

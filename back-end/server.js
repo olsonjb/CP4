@@ -14,6 +14,23 @@ mongoose.connect('mongodb://localhost:27017/conf-notes', {
     useNewUrlParser: true
 });
 
+const multer = require('multer')
+const upload = multer({
+  dest: '../conf-notes/public/images/',
+  limits: {
+    fileSize: 10000000
+  }
+});
+
+app.post('/api/photos', upload.single('photo'), async (req, res) => {
+    // Just a safety check
+    if (!req.file) {
+      return res.sendStatus(400);
+    }
+    res.send({
+      photoPath: "/images/" + req.file.filename
+    });
+  });
 
 const noteSchema = new mongoose.Schema({
     title: String,
@@ -84,8 +101,9 @@ const speakerSchema = new mongoose.Schema({
     calling: String,
     nationality: String,
     bio: String,
+    photoPath: String,
 });
-const Speaker = mongoose.model('Speaker', noteSchema);
+const Speaker = mongoose.model('Speaker', speakerSchema);
 
 app.post('/api/speakers', async (req, res) => {
     const speaker = new Speaker({
@@ -93,6 +111,7 @@ app.post('/api/speakers', async (req, res) => {
         calling: req.body.calling,
         nationality: req.body.nationality,
         bio: req.body.bio,
+        photoPath: req.body.photoPath
     });
     try {
         await speaker.save();
